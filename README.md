@@ -1,4 +1,16 @@
-# ReVo — Real-Time Volumetric Video Streaming over WebRTC
+<div align="center">
+
+# ReVo: A Cross-Layer Reliable Volumetric Videoconferencing System
+
+[![Project Website](https://img.shields.io/badge/Project-Website-blue.svg)](https://umassos.github.io/revo-website/)
+
+**Ankur Aditya**<sup>1*</sup>, **Diptyaroop Maji**<sup>1*</sup>, **Lingdong Wang**<sup>1</sup>, **Bhavya Ramakrishna**<sup>2</sup>, **Ramesh Sitaraman**<sup>1,3</sup>, **Prashant Shenoy**<sup>1</sup>
+
+<sup>1</sup>University of Massachusetts Amherst &nbsp;&nbsp;&nbsp; <sup>2</sup>Dolby Labs &nbsp;&nbsp;&nbsp; <sup>3</sup>Akamai Tech
+<br>
+<sup>*</sup> *Student authors with equal contribution*
+
+</div>
 
 ReVo streams synchronized **RGB + depth** video between two machines in
 real time using WebRTC DataChannels.  It supports traditional codecs (H.264,
