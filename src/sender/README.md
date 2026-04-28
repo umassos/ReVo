@@ -174,4 +174,8 @@ I-bytes RGB (total):  4.24 MB  (data 2.83 MB + parity 1.41 MB)
 
 ---
 
+## Troubleshooting
+
+See [FAQ.md](../../FAQ.md) for known issues and workarounds.
+
 
