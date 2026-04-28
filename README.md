@@ -157,7 +157,7 @@ cd src/sender/
 sudo python run_sender_eval.py
 ```
 
-See [sender.md](src/sender/sender.md) and [receiver.md](src/receiver/receiver.md)
+See [sender.md](src/sender/README.md) and [receiver.md](src/receiver/README.md)
 for full configuration details.
 
 ### 5. Generate frame-corruption masks
@@ -181,7 +181,7 @@ Download the pre-trained checkpoints first (one-time setup):
 bash scripts/download_checkpoints.sh
 ```
 
-Then run inference — see [lossrec.md](src/lossrec/lossrec.md) for the full
+Then run inference — see [lossrec.md](src/lossrec/README.md) for the full
 command reference for both RGB and depth streams.
 
 ---
