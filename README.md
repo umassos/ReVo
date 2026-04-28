@@ -188,3 +188,9 @@ Trace files are whitespace-separated with columns:
 RTT is fixed at 40 ms in the current setup; only bandwidth and loss columns are
 applied via Linux `tc` / `netem`.  `run_sender_eval.py` requires `sudo` for
 the `tc` commands.
+
+---
+
+## Troubleshooting
+
+See [FAQ.md](FAQ.md) for known issues and workarounds.
