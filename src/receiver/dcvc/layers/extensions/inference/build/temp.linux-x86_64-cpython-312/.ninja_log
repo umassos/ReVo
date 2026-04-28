@@ -1,0 +1,7 @@
+# ninja log v5
+0	8771	1743388900669572888	/home/umass/Projects/neural_rgbd/third_party/DCVC/src/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/impl.o	8c2b35e3d50c1a0b
+0	9372	1743388901271580015	/home/umass/Projects/neural_rgbd/third_party/DCVC/src/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/bind.o	c3cdecc8e9bf35b1
+0	25174	1743388917064766885	/home/umass/Projects/neural_rgbd/third_party/DCVC/src/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/kernel.o	151506413dfebb09
+0	8831	1745832368920369195	/home/umass/Projects/neural_rgbd/dcvc/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/impl.o	79da05bcaddb85f0
+0	9456	1745832369545375678	/home/umass/Projects/neural_rgbd/dcvc/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/bind.o	ec3231aea838d02a
+0	25766	1745832385846544686	/home/umass/Projects/neural_rgbd/dcvc/layers/extensions/inference/build/temp.linux-x86_64-cpython-312/kernel.o	a3e9e08bc633dc19

@@ -9,16 +9,16 @@ For each connection:
   2. Parses the category and video stem from the run_id.
   3. Launches receiver-3d.py with the correct output paths.
   4. Sends "READY" to unblock the sender.
-  5. Waits for the receiver subprocess to finish before accepting the next run.
+  5. Waits for the receiver subprocess (processing and saving the video) to finish before accepting the next run.
 
 Run ID format (set by run_sender_eval.py):
     <video_stem>_<category>_<trace_stem>
     Example: scene_01_wifi_trace_03
 
 Output layout:
-    <OUTPUT_ROOT>/<category>/rgb/<video_stem>.mp4
-    <OUTPUT_ROOT>/<category>/depth/<video_stem>_vis.mp4
-    <OUTPUT_ROOT>/<category>/logs/<video_stem>.log
+    <OUTPUT_ROOT>/receiver_logs/<category>/rgb/<video_stem>.mp4
+    <OUTPUT_ROOT>/receiver_logs/<category>/depth/<video_stem>_vis.mp4
+    <OUTPUT_ROOT>/receiver_logs/<category>/logs/<video_stem>.log
 """
 
 import socket
@@ -33,12 +33,12 @@ import time
 
 HOST_IP      = "0.0.0.0"   # listen on all interfaces
 CONTROL_PORT = 6000         # must match run_sender_eval.py
-CODEC        = "h264"       # "h265", "h264", or "dcvcrt" (must match sender)
+CODEC        = "h265"       # "h265", "h264", or "dcvcrt" (must match sender)
 SERVER_IP    = "10.0.0.5"   # signaling server IP
 
 BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
 RECEIVER_SCRIPT = os.path.join(BASE_DIR, "receiver-3d.py")
-OUTPUT_ROOT     = os.path.normpath(os.path.join(BASE_DIR, "../output/revo"))
+OUTPUT_ROOT     = os.path.normpath(os.path.join(BASE_DIR, f"../../output/{CODEC}/receiver_logs"))
 
 # All network category names that may appear in run IDs.
 # Used to route output into the correct subdirectory.

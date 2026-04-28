@@ -12,8 +12,9 @@ its output.
 Trace map file format (trace_map.txt, tab-separated):
     <category>  <video_stem>  <trace_path>
 
-Example:
-    wifi    scene_01    /path/to/traces/wifi/trace_03.log
+Example Run:
+    cd src/sender
+    sudo python3 run_sender_eval.py
 """
 
 import os
@@ -31,7 +32,7 @@ NETWORK_INTERFACE  = "enp130s0"
 SERVER_IP          = "10.0.0.5"   # signaling server IP
 RECEIVER_IP        = "10.0.0.6"   # used for the control-plane sync socket
 CONTROL_PORT       = 6000         # TCP port the receiver listens on for sync
-CODEC              = "h264"       # "h265", "h264", or "dcvcrt"
+CODEC              = "h265"       # "h265", "h264", or "dcvcrt"
 DEPTH_SUFFIX       = "_vis"       # depth filename = <rgb_stem><DEPTH_SUFFIX>.mp4
 POST_RUN_COOLDOWN  = 180          # seconds to wait after each run (receiver save time)
 
@@ -44,10 +45,10 @@ TRACE_DIRS = [
     # os.path.join(BASE_DIR, "./traces/eth"),
 ]
 
-RGB_VIDEO_SOURCE_DIR   = os.path.join(BASE_DIR, "../data/gt_rgb_looped")
-DEPTH_VIDEO_SOURCE_DIR = os.path.join(BASE_DIR, "../data/gt_depth_looped")
+RGB_VIDEO_SOURCE_DIR   = os.path.join(BASE_DIR, "../../data/gt_rgb")
+DEPTH_VIDEO_SOURCE_DIR = os.path.join(BASE_DIR, "../../data/gt_depth")
 
-OUTPUT_ROOT  = os.path.join(BASE_DIR, f"../output/{CODEC}/sender_logs")
+OUTPUT_ROOT  = os.path.join(BASE_DIR, f"../../output/{CODEC}/sender_logs")
 SENDER_SCRIPT = os.path.join(BASE_DIR, "sender-3d.py")
 TC_SCRIPT     = os.path.join(BASE_DIR, "run_loss_trace.py")
 TRACE_MAP_TXT = os.path.join(BASE_DIR, "./trace_map.txt")
@@ -112,7 +113,8 @@ def load_trace_map(path: str) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_evaluation():
-    output_dir = os.path.join(OUTPUT_ROOT, CODEC)
+    # output_dir = os.path.join(OUTPUT_ROOT, CODEC)
+    output_dir = OUTPUT_ROOT
     os.makedirs(output_dir, exist_ok=True)
 
     cleanup_network()
