@@ -85,11 +85,10 @@ python rgb/test_rgb_stage2.py \
 | `--input_size` | `512` | Spatial resolution the model was trained on |
 | `--num_frames` | `6` | Clip length (5 clean context + 1 corrupted target) |
 | `--tubelet_size` | `2` | Temporal depth of each 3-D patch token |
-| `--patch_size` | `32` | Spatial patch size (square) |
+| `--patch_size` | `32` | Spatial patch size (square) 32 x 32|
 | `--batch_size` | `1` | DataLoader batch size |
 | `--num_workers` | `0` | DataLoader worker processes |
 | `--device` | auto | `cuda` or `cpu` |
-| `--save_debug` | off | Also save `orig/`, `corrupted/`, `recon/` triplets |
 
 ---
 
@@ -103,7 +102,7 @@ python depth/test_depth_stage2.py \
   --clean_path     ../../data/gt_depth_looped/ \
   --corrupted_path ../../output/h265/receiver_logs/{network}/depth \
   --mask_path      ../../output/h265/receiver_logs/{network}/frame_masks \
-  --save_path      ../../output/h265/cell/depth/
+  --save_path      ../../output/h265/lossrec/cell/depth/
 ```
 
 The depth script accepts the same flags as the RGB script.
@@ -122,26 +121,44 @@ The depth script accepts the same flags as the RGB script.
 │   ├── final/
 │   │   ├── frame_0000.png   ← reconstructed corrupted frames
 │   │   └── frame_XXXX.png
-│   ├── orig/        ← ground-truth frames   (only with --save_debug)
-│   ├── corrupted/   ← corrupted input frames (only with --save_debug)
-│   └── recon/       ← model output frames   (only with --save_debug)
 ├── csv_logs/
 │   └── <video_name>_metrics.csv   ← per-frame PSNR and SSIM
 └── summary_metrics.csv            ← per-video averages + global average
 ```
 
-The `final/` directory contains only the **reconstructed** corrupted frames.
-To produce a complete video sequence (including the untouched clean frames),
-uncomment the `fill_clean_frames(args)` call at the bottom of the test script.
+**NOTE**: The `final/` directory contains only the **reconstructed** corrupted frames.
+
 
 ---
 
 ## Checkpoints
 
+Pre-trained checkpoints are hosted on Hugging Face at
+[`umass-lass/ReVo`](https://huggingface.co/umass-lass/ReVo).
+
 | Checkpoint | Stream | Codec |
 |------------|--------|-------|
 | `.checkpoints/h264/h264_rgb.pth` | RGB | H.264 |
 | `.checkpoints/h264/h264_depth.pth` | Depth | H.264 |
+| `.checkpoints/h265/h265_rgb.pth` | RGB | H.265 |
+| `.checkpoints/h265/h265_depth.pth` | Depth | H.265 |
+| `.checkpoints/dcvcrt/dcvcrt_rgb.pth` | RGB | DCVC-RT |
+| `.checkpoints/dcvcrt/dcvcrt_depth.pth` | Depth | DCVC-RT |
 
-Checkpoints are stored in `.checkpoints/` at the repository root and are **not**
-committed to git (add `.checkpoints/` to `.gitignore`).
+### Downloading checkpoints
+
+Install the Hugging Face hub client if needed:
+
+```bash
+pip install huggingface_hub
+```
+
+From the **repository root**, run:
+
+```bash
+bash scripts/download_checkpoints.sh
+```
+
+This saves all six checkpoints into `.checkpoints/` at the repository root,
+preserving the codec subdirectory structure expected by the inference scripts.
+`.checkpoints/` is **not** committed to git (add it to `.gitignore`).

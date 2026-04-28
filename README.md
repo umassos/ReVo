@@ -22,25 +22,32 @@ and deadline-based frame assembly on the receiver.
 ## Repository layout
 
 ```
+scripts/
+├── generate_lost_frame_map.py  Builds per-video frame-corruption masks from receiver logs
+└── download_checkpoints.sh     Downloads pre-trained LossRec checkpoints from Hugging Face
 src/
-├── signalling_server.py      WebRTC signaling server (run on a third machine or either peer)
+├── signalling_server.py        WebRTC signaling server (run on a the sender/receiver machine or either peer)
 ├── sender/
-│   ├── sender-3d.py          Sender — reads video files, encodes, streams over WebRTC
-│   ├── run_sender_eval.py    Batch evaluation script (iterates over traces × videos)
-│   ├── run_loss_trace.py     Network emulator — applies tc/netem from a trace file
-│   ├── H264_wrapper.py       H.264 codec interface
-│   ├── H265_wrapper.py       H.265 / HEVC codec interface
-│   ├── DCVCRT_wrapper.py     DCVC-RT neural codec interface
-│   ├── trace_map.txt         Maps (category, video) → trace file for batch eval
-│   ├── traces/               Network trace files organized by category (wifi/, cell/, …)
-│   └── sender.md             Detailed sender documentation
-└── receiver/
-    ├── receiver-3d.py        Receiver — reassembles frames, decodes, saves MP4
-    ├── run_receiver_eval.py  Batch evaluation service (pairs with run_sender_eval.py)
-    ├── H264_wrapper.py       H.264 codec interface
-    ├── H265_wrapper.py       H.265 / HEVC codec interface
-    ├── DCVCRT_wrapper.py     DCVC-RT neural codec interface
-    └── receiver.md           Detailed receiver documentation
+│   ├── sender-3d.py            Sender — reads video files, encodes, streams over WebRTC
+│   ├── run_sender_eval.py      Batch evaluation script (iterates over traces × videos)
+│   ├── run_loss_trace.py       Network emulator — applies tc/netem from a trace file
+│   ├── H264_wrapper.py         H.264 codec interface
+│   ├── H265_wrapper.py         H.265 / HEVC codec interface
+│   ├── DCVCRT_wrapper.py       DCVC-RT neural codec interface
+│   ├── trace_map.txt           Maps (category, video) → trace file for batch eval
+│   ├── traces/                 Network trace files organized by category (wifi/, cell/, …)
+│   └── sender.md               Detailed sender documentation
+├── receiver/
+│   ├── receiver-3d.py          Receiver — reassembles frames, decodes, saves MP4
+│   ├── run_receiver_eval.py    Batch evaluation service (pairs with run_sender_eval.py)
+│   ├── H264_wrapper.py         H.264 codec interface
+│   ├── H265_wrapper.py         H.265 / HEVC codec interface
+│   ├── DCVCRT_wrapper.py       DCVC-RT neural codec interface
+│   └── receiver.md             Detailed receiver documentation
+└── lossrec/
+    ├── rgb/                    RGB loss recovery model and inference script
+    ├── depth/                  Depth loss recovery model and inference script
+    └── lossrec.md              Usage, flag reference, and checkpoint documentation
 ```
 
 ---
@@ -87,6 +94,7 @@ src/
 
 ```bash
 pip install aiortc aiohttp av torchcodec torch numpy opencv-python zfec
+pip install huggingface_hub timm einops pytorch-msssim
 ```
 
 Also ensure the codec wrapper modules (`H265_wrapper.py`, `H264_wrapper.py`,
@@ -97,48 +105,61 @@ Also ensure the codec wrapper modules (`H265_wrapper.py`, `H264_wrapper.py`,
 Run this on any machine reachable by both sender and receiver:
 
 ```bash
-python src/signalling_server.py
+cd src/
+python signalling_server.py
 ```
 
 Listens on `0.0.0.0:8080`.
 
 ### 3. Start the receiver
 
+The receiver must be running before the sender initiates the WebRTC handshake.
+
+1. Edit `src/receiver/run_receiver_eval.py` with your machine IPs, codec, and directory paths.
+2. On the receiver machine:
+
 ```bash
-python src/receiver/receiver-3d.py \
-    --server_ip <signaling_server_ip> \
-    --codec h265 \
-    --out rgb_out.mp4 \
-    --out_depth depth_out.mp4
+cd src/receiver/
+python run_receiver_eval.py
 ```
 
 ### 4. Start the sender
 
-```bash
-python src/sender/sender-3d.py \
-    --file       /path/to/rgb.mp4 \
-    --depth_file /path/to/depth.mp4 \
-    --server_ip  <signaling_server_ip> \
-    --codec      h265
-```
-
-The sender streams all frames, sends a `bye` message, and exits.  The receiver
-saves its output files and exits automatically.
-
----
-
-## Batch evaluation
-
-For evaluating across many (trace, video) combinations:
-
-1. Edit `src/sender/run_sender_eval.py` and `src/receiver/run_receiver_eval.py`
-   with your machine IPs, codec, and directory paths.
+1. Edit `src/sender/run_sender_eval.py` with your machine IPs, codec, and directory paths.
 2. Populate `src/sender/trace_map.txt` with `(category, video_stem, trace_path)` entries.
-3. On the receiver machine: `python src/receiver/run_receiver_eval.py`
-4. On the sender machine: `python src/sender/run_sender_eval.py`
+3. On the sender machine:
+
+```bash
+cd src/sender/
+sudo python run_sender_eval.py
+```
 
 See [sender.md](src/sender/sender.md) and [receiver.md](src/receiver/receiver.md)
 for full configuration details.
+
+### 5. Generate frame-corruption masks
+
+Once a streaming session completes, the receiver writes a log file per video.
+Parse those logs into per-video `.npy` frame masks (required by the loss recovery step):
+
+1. Edit the `LOG_DIR` and `SAVE_DIR` variables at the top of `scripts/generate_lost_frame_map.py`
+   to point to the receiver log directory and your desired mask output directory.
+2. Run from the repository root:
+
+```bash
+python scripts/generate_lost_frame_map.py
+```
+
+### 6. Run loss recovery
+
+Download the pre-trained checkpoints first (one-time setup):
+
+```bash
+bash scripts/download_checkpoints.sh
+```
+
+Then run inference — see [lossrec.md](src/lossrec/lossrec.md) for the full
+command reference for both RGB and depth streams.
 
 ---
 
@@ -154,12 +175,16 @@ for full configuration details.
 
 ## Network emulation
 
-Pass `--trace_path` to `sender-3d.py` to replay a bandwidth/loss trace using
-Linux `tc` / `netem`.  Trace files are whitespace-separated with columns:
+Network emulation runs automatically — `run_sender_eval.py` launches
+`run_loss_trace.py` as a subprocess for each run, passing the trace file
+resolved from `trace_map.txt`.  No manual invocation is needed.
+
+Trace files are whitespace-separated with columns:
 
 ```
 <timestamp_s>  <bandwidth_mbps>  <rtt_ms>  <loss_0_to_1>
 ```
 
-RTT is fixed at 40 ms in the current setup; only bandwidth and loss are applied
-from the trace.  Requires `sudo` for `tc` commands.
+RTT is fixed at 40 ms in the current setup; only bandwidth and loss columns are
+applied via Linux `tc` / `netem`.  `run_sender_eval.py` requires `sudo` for
+the `tc` commands.

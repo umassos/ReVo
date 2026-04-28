@@ -1,0 +1,10 @@
+./output/
+./checkpoints/
+
+
+#common large files
+*.pth
+__pycache__/
+*.log
+*.csv
+*.json
