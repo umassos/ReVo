@@ -165,3 +165,7 @@ The depth script accepts the same flags as the RGB script.
 ```
 
 **NOTE**: The `final/` directory contains only the **reconstructed** corrupted frames.
+
+---
+
+> **Training details coming soon.**

@@ -52,6 +52,8 @@ src/
     └── lossrec.md              Usage, flag reference, and checkpoint documentation
 ```
 
+> **Neural loss recovery training details coming soon.**
+
 ---
 
 ## How it works

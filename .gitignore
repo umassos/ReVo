@@ -1,6 +1,6 @@
 ./output/
 ./checkpoints/
-
+src/lossrec/training
 
 #common large files
 *.pth

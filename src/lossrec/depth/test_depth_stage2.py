@@ -36,7 +36,7 @@ from torchcodec.decoders import VideoDecoder
 from pytorch_msssim import MS_SSIM
 
 from dataloader_finetune_inference_depth import LossRecoveryData
-from modeling_pretrain_0820 import PretrainVisionTransformer
+from modeling_pretrain import PretrainVisionTransformer
 
 
 to_pil = ToPILImage()
