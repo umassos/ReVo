@@ -22,11 +22,12 @@ and deadline-based frame assembly on the receiver.
 ## Repository layout
 
 ```
+FAQ.md
 scripts/
-├── generate_lost_frame_map.py  Builds per-video frame-corruption masks from receiver logs
+├── generate_frame_masks.py     Builds per-video frame-corruption masks from receiver logs
 └── download_checkpoints.sh     Downloads pre-trained LossRec checkpoints from Hugging Face
 src/
-├── signalling_server.py        WebRTC signaling server (run on a the sender/receiver machine or either peer)
+├── signalling_server.py        WebRTC signaling server (run on any machine reachable by sender and receiver)
 ├── sender/
 │   ├── sender-3d.py            Sender — reads video files, encodes, streams over WebRTC
 │   ├── run_sender_eval.py      Batch evaluation script (iterates over traces × videos)
