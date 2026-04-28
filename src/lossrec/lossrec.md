@@ -36,101 +36,15 @@ src/lossrec/
 
 ## Prerequisites
 
-```bash
-pip install torch torchvision timm einops pytorch-msssim torchcodec
+Please Refer to [README.md](../../README.md) for installation details 
+```bash 
+conda activate revo
 ```
 
 The scripts must be run from `src/lossrec/` so that Python can resolve the
 intra-package imports (`from modeling_pretrain_0820 import ...`).
 
 ---
-
-## Input data layout
-
-| Path | Contents |
-|------|----------|
-| `data/gt_rgb_looped/` | Ground-truth RGB videos (`.mp4` / `.avi`) |
-| `data/gt_depth_looped/` | Ground-truth depth videos |
-| `output/.../rgb/` | Codec-corrupted RGB videos (same filenames as GT) |
-| `output/.../depth/` | Codec-corrupted depth videos |
-| `output/.../frame_masks/` | Per-video frame masks (`<stem>_frame_mask.npy`) |
-
-**Frame mask format** — a 1-D NumPy array of length `T` (number of frames).
-`0` = clean frame, `> 0` = corrupted / lost frame.
-
----
-
-## RGB inference
-
-```bash
-cd src/lossrec/
-
-python rgb/test_rgb_stage2.py \
-  --checkpoint     ../../.checkpoints/h264/h264_rgb.pth \
-  --clean_path     ../../data/gt_rgb_looped/ \
-  --corrupted_path ../../output/h265/receiver_logs/{network}/rgb \
-  --mask_path      ../../output/h265/receiver_logs/{network}/frame_masks \
-  --save_path      ../../output/h265/cell/rgb/
-```
-
-### All flags
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--checkpoint` | *(required)* | Path to trained `.pth` checkpoint |
-| `--clean_path` | *(required)* | Directory of ground-truth RGB videos |
-| `--corrupted_path` | *(required)* | Directory of corrupted RGB videos |
-| `--mask_path` | *(required)* | Directory of `_frame_mask.npy` files |
-| `--save_path` | `output/v2` | Root output directory |
-| `--input_size` | `512` | Spatial resolution the model was trained on |
-| `--num_frames` | `6` | Clip length (5 clean context + 1 corrupted target) |
-| `--tubelet_size` | `2` | Temporal depth of each 3-D patch token |
-| `--patch_size` | `32` | Spatial patch size (square) 32 x 32|
-| `--batch_size` | `1` | DataLoader batch size |
-| `--num_workers` | `0` | DataLoader worker processes |
-| `--device` | auto | `cuda` or `cpu` |
-
----
-
-## Depth inference
-
-```bash
-cd src/lossrec/
-
-python depth/test_depth_stage2.py \
-  --checkpoint     ../../.checkpoints/h264/h264_depth.pth \
-  --clean_path     ../../data/gt_depth_looped/ \
-  --corrupted_path ../../output/h265/receiver_logs/{network}/depth \
-  --mask_path      ../../output/h265/receiver_logs/{network}/frame_masks \
-  --save_path      ../../output/h265/lossrec/cell/depth/
-```
-
-The depth script accepts the same flags as the RGB script.
-
-> **Depth video naming** — depth videos may carry a `_vis` suffix
-> (e.g. `scene_vis.mp4`).  The dataloader automatically strips `_vis` when
-> looking up the corresponding mask file (`scene_frame_mask.npy`).
-
----
-
-## Output structure
-
-```
-<save_path>/
-├── <video_name>/
-│   ├── final/
-│   │   ├── frame_0000.png   ← reconstructed corrupted frames
-│   │   └── frame_XXXX.png
-├── csv_logs/
-│   └── <video_name>_metrics.csv   ← per-frame PSNR and SSIM
-└── summary_metrics.csv            ← per-video averages + global average
-```
-
-**NOTE**: The `final/` directory contains only the **reconstructed** corrupted frames.
-
-
----
-
 ## Checkpoints
 
 Pre-trained checkpoints are hosted on Hugging Face at
@@ -162,3 +76,92 @@ bash scripts/download_checkpoints.sh
 This saves all six checkpoints into `.checkpoints/` at the repository root,
 preserving the codec subdirectory structure expected by the inference scripts.
 `.checkpoints/` is **not** committed to git (add it to `.gitignore`).
+
+---
+
+## Input data layout
+
+| Path | Contents |
+|------|----------|
+| `data/gt_rgb/` | Ground-truth RGB videos (`.mp4`) |
+| `data/gt_depth/` | Ground-truth depth videos (`.mp4`) |
+| `output/.../rgb/` | Codec-corrupted RGB videos (same filenames as GT) |
+| `output/.../depth/` | Codec-corrupted depth videos |
+| `output/.../frame_masks/` | Per-video frame masks (`<stem>_frame_mask.npy`) |
+
+**Frame mask format** — a 1-D NumPy array of length `T` (number of frames).
+`0` = clean frame, `> 0` = corrupted / lost frame.
+
+---
+
+## RGB inference
+
+```bash
+cd src/lossrec/
+
+python depth/test_rgb_stage2.py \
+  --checkpoint     ../../.checkpoints/{CODEC}/{CODEC}_rgb.pth \
+  --clean_path     ../../data/gt_rgb/ \
+  --corrupted_path ../../output/{CODEC}/receiver_logs/{network}/rgb \
+  --mask_path      ../../output/{CODEC}/receiver_logs/{network}/frame_masks \
+  --save_path      ../../output/{CODEC}/{network}/rgb/
+```
+
+
+## Depth inference
+
+```bash
+cd src/lossrec/
+
+python rgb/test_depth_stage2.py \
+  --checkpoint     ../../.checkpoints/{CODEC}/{CODEC}_depth.pth \
+  --clean_path     ../../data/gt_depth/ \
+  --corrupted_path ../../output/{CODEC}/receiver_logs/{network}/depth \
+  --mask_path      ../../output/{CODEC}/receiver_logs/{network}/frame_masks \
+  --save_path      ../../output/{CODEC}/lossrec/{network}/depth/
+```
+
+The depth script accepts the same flags as the RGB script.
+
+> **Depth video naming** — depth videos may carry a `_vis` suffix
+> (e.g. `videoName_vis.mp4`).  The dataloader automatically strips `_vis` when
+> looking up the corresponding mask file (`videoName_frame_mask.npy`).
+
+
+### All flags
+
+{CODEC} Options: h265, h264, dcvc-rt
+{network} Options: cell, wifi, eth
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--checkpoint` | *(required)* | Path to trained `.pth` checkpoint |
+| `--clean_path` | *(required)* | Directory of ground-truth RGB videos |
+| `--corrupted_path` | *(required)* | Directory of corrupted RGB videos |
+| `--mask_path` | *(required)* | Directory of `_frame_mask.npy` files |
+| `--save_path` | `output/v2` | Root output directory |
+| `--input_size` | `512` | Spatial resolution the model was trained on |
+| `--num_frames` | `6` | Clip length (5 clean context + 1 corrupted target) |
+| `--tubelet_size` | `2` | Temporal depth of each 3-D patch token |
+| `--patch_size` | `32` | Spatial patch size (square) 32 x 32|
+| `--batch_size` | `1` | DataLoader batch size |
+| `--num_workers` | `0` | DataLoader worker processes |
+| `--device` | auto | `cuda` or `cpu` |
+
+
+---
+
+## Output structure
+
+```
+<save_path>/
+├── <video_name>/
+│   ├── final/
+│   │   ├── frame_0000.png   ← reconstructed corrupted frames
+│   │   └── frame_XXXX.png
+├── csv_logs/
+│   └── <video_name>_metrics.csv   ← per-frame PSNR and SSIM
+└── summary_metrics.csv            ← per-video averages + global average
+```
+
+**NOTE**: The `final/` directory contains only the **reconstructed** corrupted frames.

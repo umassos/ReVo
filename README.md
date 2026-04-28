@@ -91,15 +91,36 @@ src/
 ## Quick start
 
 ### 1. Install dependencies
-
 ```bash
-pip install aiortc aiohttp av torchcodec torch numpy opencv-python zfec
-pip install huggingface_hub timm einops pytorch-msssim
+conda create -n revo python=3.12 
 ```
+```bash
+conda activate revo
+```
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
+```bash
+pip install tqdm scipy pybind11 pillow pandas matplotlib pyyaml torchmetrics av aiortc aiohttp torchcodec==0.3 numpy opencv-python zfec einops pytorch_msssim timm
+```
+Install DCVC-RT dependencies:
 
-Also ensure the codec wrapper modules (`H265_wrapper.py`, `H264_wrapper.py`,
+**Step 1:** Clone the DCVC-RT repository.
+```bash
+git clone https://github.com/microsoft/DCVC.git
+```
+**Step 2:** Build and install the C++ extension.
+```bash
+cd ./DCVC/src/cpp/
+pip install --no-build-isolation .
+```
+**Step 3:** Download checkpoints from https://github.com/microsoft/DCVC
+
+
+For more details or troubleshooting DCVC-RT installation please refer to official documentation at https://github.com/microsoft/DCVC
+
+NOTE: Ensure the codec wrapper modules (`H265_wrapper.py`, `H264_wrapper.py`,
 `DCVCRT_wrapper.py`) are present in both `src/sender/` and `src/receiver/`.
-
 ### 2. Start the signaling server
 
 Run this on any machine reachable by both sender and receiver:
@@ -194,3 +215,16 @@ the `tc` commands.
 ## Troubleshooting
 
 See [FAQ.md](FAQ.md) for known issues and workarounds.
+
+---
+
+## Acknowledgments
+
+This codebase builds on several excellent open-source projects:
+
+- The neural loss recovery module borrows the ViViT backbone from
+  [VideoMAE](https://github.com/MCG-NJU/VideoMAE) (Wang et al., NeurIPS 2022).
+  We thank the MCG-NJU team for releasing their code.
+- The `dcvcrt` codec integration uses
+  [DCVC-RT](https://github.com/microsoft/DCVC) from Microsoft Research.
+  We thank the DCVC team for open-sourcing their neural video compression framework.

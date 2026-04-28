@@ -5,8 +5,6 @@ It reads pre-recorded RGB and depth video files, compresses each frame with the
 chosen codec, and streams both over separate WebRTC DataChannels to a waiting
 receiver (`receiver-3d.py`).
 
-For batch evaluation over many (trace, video) pairs use `run_sender_eval.py`
-instead of calling `sender-3d.py` directly.
 
 ---
 
@@ -91,47 +89,7 @@ that contains them, or add that directory to `PYTHONPATH`.
 
 ---
 
-## Running the sender
-
-### Single run
-
-**Minimal:**
-```bash
-python sender-3d.py \
-    --file       /path/to/rgb.mp4 \
-    --depth_file /path/to/depth.mp4 \
-    --server_ip  192.168.1.10 \
-    --codec      h265
-```
-
-**With network trace emulation:**
-```bash
-python sender-3d.py \
-    --file       /path/to/rgb.mp4 \
-    --depth_file /path/to/depth.mp4 \
-    --server_ip  192.168.1.10 \
-    --codec      h265 \
-    --trace_path /path/to/trace.log \
-    --interface  eth0 \
-    --tc_script  run_loss_trace.py
-```
-
-### Command-line arguments
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `--file` | **yes** | — | Path to the RGB video file |
-| `--depth_file` | **yes** | — | Path to the depth video file |
-| `--server_ip` | **yes** | — | IP address of the signaling server |
-| `--codec` | **yes** | — | Codec: `h265`, `h264`, `dcvcrt` |
-| `--stun_url` | no | `stun:stun.l.google.com:19302` | STUN server URL |
-| `--trace_path` | no | `None` | Network trace file for loss/BW emulation |
-| `--interface` | no | `enp130s0` | Network interface for `tc` rules |
-| `--tc_script` | no | `run_loss_trace.py` | Path to the TC control script |
-
----
-
-## Batch evaluation (`run_sender_eval.py`)
+## Running the sender(`run_sender_eval.py`)
 
 `run_sender_eval.py` automates running every (video, trace) pair defined in
 `trace_map.txt`.  It syncs with the receiver before each run via a TCP
@@ -151,9 +109,9 @@ cooldown period after each run so the receiver can finish saving its output.
 | `TRACE_DIRS` | List of trace category directories to evaluate |
 | `RGB_VIDEO_SOURCE_DIR` | Directory containing RGB video files (`*.mp4`) |
 | `DEPTH_VIDEO_SOURCE_DIR` | Directory containing depth video files |
-| `DEPTH_SUFFIX` | Suffix that maps an RGB stem to its depth filename |
+| `DEPTH_SUFFIX` | Suffix that maps an RGB videoName to its depth filename |
 | `OUTPUT_ROOT` | Root directory for sender log files |
-| `POST_RUN_COOLDOWN` | Seconds to wait after each run (receiver save time) |
+| `POST_RUN_COOLDOWN` | Seconds to wait after each run (receiver video saving time) |
 
 **2. Prepare `trace_map.txt`** — one tab-separated line per run:
 ```
@@ -161,8 +119,9 @@ cooldown period after each run so the receiver can finish saving its output.
 ```
 Example:
 ```
-wifi    scene_01    /data/traces/wifi/trace_03.log
-cell    scene_01    /data/traces/cell/trace_07.log
+wifi    videoName    /src/sender/traces/wifi/trace_03.log
+cell    videoName    /src/sender/traces/cell/trace_01.log
+eth     videoName    /src/sender/traces/eth/trace_08.log
 ```
 
 **3. Start the receiver eval service first** (see `receiver.md`), then run:
@@ -174,30 +133,15 @@ python run_sender_eval.py
 
 Sender logs are saved to:
 ```
-<OUTPUT_ROOT>/<CODEC>/<run_id>.log
+<OUTPUT_ROOT>/<CODEC>/sender_logs/<run_id>.log
 ```
-where `run_id = <video_stem>_<category>_<trace_stem>`.
-
----
-
-## Startup sequence (single run)
-
-1. Sender connects to `ws://<server_ip>:8080/ws/demo` with `role: offer`.
-2. Creates an SDP offer and sends it to the signaling server.
-3. Waits for the receiver's SDP answer.
-4. Once both DataChannels are open, a 1-second probe burst is sent on the RGB
-   channel to warm up the congestion controller's bandwidth estimate.
-5. After a 2-second hold, `stream_video()` begins.
-6. When the last frame is sent, a `{"type": "bye"}` message is forwarded to the
-   receiver, which then drains its buffers and writes the output files.
+where `run_id = <videoName>_<category>_<trace_stem>`.
 
 ---
 
 ## Network trace (`run_loss_trace.py`)
 
-Pass `--trace_path` to emulate real-world network conditions.  The trace script
-applies time-varying bandwidth and packet loss via Linux `tc` / `netem`.
-
+Trace script automatically `run_loss_trace.py` launches as a subprocess. 
 **Trace file format** (whitespace-separated):
 ```
 <timestamp_s>  <bandwidth_mbps>  <rtt_ms>  <loss_0_to_1>
@@ -206,7 +150,7 @@ applies time-varying bandwidth and packet loss via Linux `tc` / `netem`.
 The RTT column is parsed but **not applied** — one-way delay is fixed at 40 ms
 (`FIXED_DELAY_MS` in `run_loss_trace.py`).  The trace loops automatically.
 
-> **Note:** `tc` rules require `sudo`.  The trace is always cleaned up on exit,
+> **Note:** `tc` rules in `run_loss_trace.py` require `sudo`.  The trace is always cleaned up on exit,
 > even on crash, so the interface is left in a usable state.
 
 ---
@@ -230,22 +174,4 @@ I-bytes RGB (total):  4.24 MB  (data 2.83 MB + parity 1.41 MB)
 
 ---
 
-## Troubleshooting
 
-**Receiver never gets an offer**
-- Confirm the signaling server is running at `ws://<server_ip>:8080/ws/demo`.
-- Start the receiver before the sender sends the offer.
-
-**`ModuleNotFoundError` for a wrapper**
-- Run the script from the directory containing `H265_wrapper.py` etc., or set `PYTHONPATH`.
-
-**Channel buffer exceeds hard limit (frames dropped)**
-- The network is too slow for the configured bitrate.  Try a lower-quality codec
-  or a smaller resolution.
-
-**Batch run skips every video (`sync failed`)**
-- The receiver eval service is not running, or `RECEIVER_IP` / `CONTROL_PORT`
-  do not match between sender and receiver eval scripts.
-
-**`sudo` prompt from `tc` cleanup on exit**
-- Pre-authorize `tc` via `/etc/sudoers`, or run as root in test environments.

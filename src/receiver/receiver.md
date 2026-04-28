@@ -69,52 +69,15 @@ and the receiver reconstructs from any *k* of them.
 | `H265_wrapper` | H.265 / HEVC codec wrapper (local) |
 | `H264_wrapper` | H.264 / AVC codec wrapper (local) |
 
-Install public packages:
 
-```bash
-pip install aiortc aiohttp av torch numpy opencv-python zfec
-```
+Please Refer to [README.md](../../README.md) for installation details. 
 
 The `*_wrapper` modules are project-local — run the script from the directory
-that contains them, or add that directory to `PYTHONPATH`.
+that contains them.
 
 ---
 
-## Running the receiver
-
-### Single run
-
-**Minimal:**
-```bash
-python receiver-3d.py \
-    --server_ip 192.168.1.10 \
-    --codec h265
-```
-Outputs: `out_video.mp4` (RGB) and `out_video_depth.mp4` (depth).
-
-**With explicit output paths:**
-```bash
-python receiver-3d.py \
-    --server_ip  192.168.1.10 \
-    --codec      h265 \
-    --out        /path/to/rgb_output.mp4 \
-    --out_depth  /path/to/depth_output.mp4 \
-    --stun       stun:stun.l.google.com:19302
-```
-
-### Command-line arguments
-
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `--server_ip` | **yes** | — | IP address of the signaling server |
-| `--codec` | **yes** | — | Codec for both streams: `h265`, `h264`, `dcvcrt` |
-| `--out` | no | `out_video.mp4` | Output path for the RGB video |
-| `--out_depth` | no | `<out>_depth.mp4` | Output path for the depth video |
-| `--stun` | no | `stun:stun.l.google.com:19302` | STUN server URL for NAT traversal |
-
----
-
-## Batch evaluation (`run_receiver_eval.py`)
+## Running the receiver (`run_receiver_eval.py`)
 
 `run_receiver_eval.py` runs as a persistent service on the receiver machine.
 It listens on a TCP control socket, waits for the sender eval script to connect
@@ -126,10 +89,11 @@ Output is organized automatically under `OUTPUT_ROOT`:
 ```
 <OUTPUT_ROOT>/
   <category>/
-    rgb/    <video_stem>.mp4
-    depth/  <video_stem>_vis.mp4
-    logs/   <video_stem>.log
+    rgb/    <videoName>.mp4
+    depth/  <videoName>_vis.mp4
+    logs/   <videoName>.log
 ```
+
 
 ### Setup
 
@@ -156,7 +120,7 @@ The sender constructs a `run_id` as:
 ```
 <video_stem>_<category>_<trace_stem>
 ```
-Example: `scene_01_wifi_trace_03`
+Example: `videoName_wifi_trace_03`
 
 The receiver service parses `_<category>_` from the run ID to route output
 into the correct category subdirectory.  The video stem (everything before the
@@ -167,11 +131,11 @@ category tag) becomes the output filename.
 ```
 output/
   wifi/
-    rgb/    scene_01.mp4
-    depth/  scene_01_vis.mp4
-    logs/   scene_01.log
+    rgb/    videoName.mp4
+    depth/  videoName_vis.mp4
+    logs/   videoName.log
   cell/
-    rgb/    scene_01.mp4
+    rgb/    videoName.mp4
     ...
 ```
 
@@ -189,50 +153,6 @@ receiver drains in-flight frames, saves the videos, and exits.
 
 ---
 
-## Output files
-
-| File | Content |
-|------|---------|
-| `<out>.mp4` | RGB frames, encoded losslessly with libx264 (CRF 0, preset veryslow) |
-| `<out_depth>.mp4` | Depth frames, same encoding settings |
-
-Both files use the same frame rate and GOP structure as the incoming stream.
-
----
-
-## Quality masks
-
-After each session the receiver holds two boolean lists per stream for
-downstream quality analysis or neural loss concealment:
-
-| List | Meaning |
-|------|---------|
-| `corrupted_frame_list_rgb/depth` | `True` if a frame received bad data (propagates through the GOP) |
-| `frozen_mask_list_rgb/depth` | `True` if a frame was totally lost and the display froze on the previous frame |
-
----
-
 ## Troubleshooting
 
-**Receiver connects but no frames arrive**
-- Check that the sender is running and connected to the same signaling server.
-- Verify the STUN server is reachable (needed for NAT traversal).
-
-**`ModuleNotFoundError` for a wrapper**
-- Run from the directory containing `H265_wrapper.py` etc., or set `PYTHONPATH`.
-
-**All frames marked as lost**
-- Network loss is too high for P-frame recovery.  Try a lower bitrate or a
-  codec with stronger FEC on the sender side.
-
-**GPU out of memory**
-- Reduce resolution or frame rate on the sender, or free GPU memory before
-  starting the receiver.
-
-**Batch run: receiver exits before sender finishes**
-- Increase `POST_RUN_COOLDOWN` in `run_sender_eval.py` to give the receiver
-  more time to save its output before the next run begins.
-
-**Batch run: output goes to `mixed/` instead of the right category**
-- Ensure `CATEGORIES` in `run_receiver_eval.py` contains all category names
-  used in your `trace_map.txt` (e.g. `wifi`, `cell`, `eth`).
+See [FAQ.md](../../FAQ.md) for known issues and workarounds.
