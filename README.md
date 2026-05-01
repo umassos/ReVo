@@ -217,9 +217,27 @@ the `tc` commands.
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 See [FAQ.md](FAQ.md) for known issues and workarounds.
+
+---
+
+## 🎓 Citation
+
+If you find **ReVo** useful in your research, please cite:
+
+```bibtex
+@misc{aditya2026revocrosslayerreliablevolumetric,
+      title={ReVo: A Cross-Layer Reliable Volumetric Videoconferencing System}, 
+      author={Ankur Aditya and Diptyaroop Maji and Lingdong Wang and Bhavya Ramakrishna and Ramesh Sitaraman and Prashant Shenoy},
+      year={2026},
+      eprint={2604.27441},
+      archivePrefix={arXiv},
+      primaryClass={cs.NI},
+      url={https://arxiv.org/abs/2604.27441}, 
+}
+```
 
 ---
 

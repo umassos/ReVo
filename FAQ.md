@@ -48,13 +48,12 @@ before running a `dcvcrt` session.
 ## Sender
 
 **Receiver never gets an offer**
-- Confirm the signaling server is running at `ws://<server_ip>:8080/ws/demo`.
-- Start the receiver before the sender sends the offer.
+> Confirm the signaling server is running at `ws://<server_ip>:8080/ws/demo`.
+> Start the receiver before the sender sends the offer.
 
 **`ModuleNotFoundError` for a wrapper**
-- Run the script from the directory containing `H265_wrapper.py` etc., or set `PYTHONPATH`.
-
+> Run the script from the directory containing `H265_wrapper.py` etc., or set `PYTHONPATH`.
 
 **Batch run skips every video (`sync failed`)**
-- The receiver eval service is not running, or `RECEIVER_IP` / `CONTROL_PORT`
-  do not match between sender and receiver eval scripts.
+> Ensure the receiver eval service is running and that `RECEIVER_IP` / `CONTROL_PORT`
+> match between sender and receiver eval scripts.
